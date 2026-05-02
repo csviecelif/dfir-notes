@@ -1,16 +1,16 @@
-# 🧠 Windows Registry Investigation Guide
+# 🧠 Windows Registry Forensic Triage Guide
 
-***
+---
 
-## Overview
+## 🧭 Overview
 
 The Windows Registry is a hierarchical database that stores operating system, user, hardware, and application configuration data. From an investigative perspective, it is one of the most valuable artifact sources because it preserves evidence of persistence, execution, security configuration, user activity, device usage, and system manipulation.
 
-This basic guide is focused on **what to review during an investigation**. It is not intended to be a full Registry internals reference or a malware development note. The goal is to highlight Registry locations that frequently provide high-value evidence during triage, incident response, and forensic review.
+This guide is focused on **what to inspect during an investigation**. It is not a Registry internals reference or malware development note. The goal is to highlight Registry locations that frequently provide high-value evidence during triage, incident response, and forensic review.
 
-***
+---
 
-## Registry root keys
+## 🗂️ Registry root keys
 
 These root keys are the logical views most commonly referenced during analysis:
 
@@ -22,9 +22,9 @@ These root keys are the logical views most commonly referenced during analysis:
 
 These are logical paths presented by Windows. In forensic work, the underlying hive files are often more important than the logical aliases.
 
-***
+---
 
-## Hive files
+## 📁 Hive files
 
 Registry hive files are structured on-disk containers that back the logical Registry paths.
 
@@ -42,14 +42,14 @@ These are commonly stored under `%SystemRoot%\System32\Config`:
 
 These are typically stored inside each user profile:
 
-- `%UserProfile%\NTUSER.DAT` — User-specific settings such as Explorer history, Run keys, and many per-user execution artifacts.[1][2]
-- `%LocalAppData%\Microsoft\Windows\UsrClass.dat` — Per-user class registration, shell integration, and COM-related artifacts.[2][3]
+- `%UserProfile%\NTUSER.DAT` — User-specific settings such as Explorer history, Run keys, and many per-user execution artifacts.
+- `%LocalAppData%\Microsoft\Windows\UsrClass.dat` — Per-user class registration, shell integration, and COM-related artifacts.
 
-When investigating user activity or per-user persistence, `NTUSER.DAT` and `UsrClass.dat` are often just as important as the system hives.[2][3]
+When investigating user activity or per-user persistence, `NTUSER.DAT` and `UsrClass.dat` are often just as important as the system hives.
 
-***
+---
 
-## Why malware uses the Registry
+## 🔍 Why malware uses the Registry
 
 The Registry is commonly abused because it offers stable storage, automatic execution points, policy control, and extensive integration with the operating system.
 
@@ -66,9 +66,9 @@ Common malicious use cases include:
 
 Because of this, Registry analysis is not only about persistence. It is also about identifying **intent**, **scope**, and **post-compromise behavior**.
 
-***
+---
 
-## Investigation priorities
+## 📌 Investigation priorities
 
 A practical Registry review during an investigation usually follows this order:
 
@@ -81,9 +81,13 @@ A practical Registry review during an investigation usually follows this order:
 
 This order helps reduce time-to-answer during triage while still preserving breadth.
 
-***
+### 🧰 Eric Zimmerman’s Registry Explorer
 
-## Persistence
+When analyzing extracted hive files, use **Registry Explorer** for fast navigation, value comparison, and deleted artifact review. Pay special attention to **Associated deleted records** and **Unassociated deleted values**, since attackers often remove persistence or configuration keys after use.
+
+---
+
+## 🚀 Persistence
 
 ### Run and RunOnce keys
 
@@ -105,9 +109,9 @@ Review these common autostart locations for suspicious command lines, renamed bi
 - File names designed to resemble legitimate software.
 - Empty values, orphaned paths, or entries pointing to deleted files.
 
-***
+---
 
-## Services
+## 🛠️ Services
 
 Malicious services remain one of the most reliable persistence mechanisms because they can execute at boot, run as privileged accounts, and blend into normal system behavior.
 
@@ -131,9 +135,9 @@ Review:
 - Broken paths, replaced binaries, or services with no legitimate vendor relationship.
 - Unexpected autostart services installed close to the intrusion timeframe.
 
-***
+---
 
-## Defense evasion
+## 🛡️ Defense evasion
 
 ### Windows Defender and protection settings
 
@@ -174,11 +178,11 @@ Review:
 
 If set to `1`, this is a major finding because it can allow plaintext credential material to be retained in memory under compatible configurations. Even on newer systems, the presence of this value may still indicate attacker intent, legacy hardening drift, or prior credential access activity.
 
-***
+---
 
-## IFEO abuse
+## 🎯 IFEO abuse
 
-Image File Execution Options can be used legitimately for debugging, but they are also widely abused to hijack execution flow through the `Debugger` value.[4][5][6]
+Image File Execution Options can be used legitimately for debugging, but they are also widely abused to hijack execution flow through the `Debugger` value.
 
 Review:
 
@@ -188,7 +192,7 @@ Review:
 
 - `Debugger`
 
-A malicious `Debugger` value can cause Windows to launch a different binary when the target executable starts.[4][6]
+A malicious `Debugger` value can cause Windows to launch a different binary when the target executable starts.
 
 ### Common targets
 
@@ -199,11 +203,11 @@ A malicious `Debugger` value can cause Windows to launch a different binary when
 - `utilman.exe`
 - Security or administrative tools that an attacker wants to suppress, replace, or monitor
 
-This technique should also be reviewed alongside related execution redirection scenarios such as `SilentProcessExit`-based monitoring or trigger behavior when relevant to the case.[7]
+This technique should also be reviewed alongside related execution redirection scenarios such as `SilentProcessExit`-based monitoring or trigger behavior when relevant to the case.
 
-***
+---
 
-## Winlogon and AppInit abuse
+## 🪟 Winlogon and AppInit abuse
 
 ### Winlogon
 
@@ -231,7 +235,7 @@ Review:
 - `AppInit_DLLs`
 - `LoadAppInit_DLLs`
 
-AppInit DLLs can force DLL loading into processes that load `user32.dll`, making them a classic persistence and injection mechanism.[8][9]
+AppInit DLLs can force DLL loading into processes that load `user32.dll`, making them a classic persistence and injection mechanism.
 
 ### What to look for
 
@@ -240,9 +244,9 @@ AppInit DLLs can force DLL loading into processes that load `user32.dll`, making
 - DLLs with random names or masquerading names.
 - 32-bit and 64-bit mismatches used to selectively target processes.
 
-***
+---
 
-## COM hijacking
+## 🧩 COM hijacking
 
 Per-user COM registration is an important review area because `HKCU`-based class entries can override or redirect expected component loading behavior.
 
@@ -260,9 +264,9 @@ Review:
 
 A per-user COM override is often stealthier than a machine-wide persistence point because it blends into user-specific configuration and may only trigger under certain execution paths.
 
-***
+---
 
-## Boot execution and early-start persistence
+## 🏁 Boot execution and early-start persistence
 
 Review these locations for signs of execution before normal user activity begins.
 
@@ -278,9 +282,9 @@ Review these locations for signs of execution before normal user activity begins
 
 `BootExecute` is especially critical because it can affect startup flow before the system reaches a normal interactive state.
 
-***
+---
 
-## Credential-related artifacts
+## 🔐 Credential-related artifacts
 
 Review credential-bearing or credential-supporting areas carefully.
 
@@ -296,9 +300,9 @@ Review credential-bearing or credential-supporting areas carefully.
 
 These paths are sensitive and high-value. Treat any unauthorized access or tampering as a major escalation indicator.
 
-***
+---
 
-## C2 and RAT configuration
+## 🧬 C2 and RAT configuration
 
 Attackers often store lightweight configuration in obscure Registry locations because the data survives reboot and does not require a separate config file.
 
@@ -318,9 +322,9 @@ Review:
 
 Do not ignore custom subkeys simply because they appear application-specific. Attackers frequently hide in “boring” software-like naming.
 
-***
+---
 
-## Activity artifacts
+## 🗂️ Activity artifacts
 
 Registry activity artifacts help reconstruct what the user or malware interacted with, even when the payload is no longer present.
 
@@ -344,9 +348,9 @@ Review:
 
 These artifacts are often strongest when correlated with surrounding timestamps and other host evidence.
 
-***
+---
 
-## Physical interaction and removable media
+## 📎 Physical interaction and removable media
 
 Device history can show physical access, staging activity, or data movement.
 
@@ -366,9 +370,9 @@ Review:
 
 `USBSTOR` is especially useful because it often provides enough detail to tie device presence to a specific piece of removable hardware.
 
-***
+---
 
-## Practical red flags
+## ⚠️ Practical red flags
 
 Across all Registry areas, prioritize these findings:
 
@@ -382,16 +386,16 @@ Across all Registry areas, prioritize these findings:
 - Paths to deleted files, network shares, or transient directories.
 - Registry changes that align with login, beaconing, staging, or lateral movement timelines.
 
-***
+---
 
-## Interpretation notes
+## 🧠 Interpretation notes
 
 A single suspicious Registry value is not always enough to prove compromise. Some keys are modified by administrators, installers, endpoint software, accessibility features, or legacy troubleshooting workflows.
 
 The key question is whether the Registry content is **consistent with the host’s expected role, user behavior, software inventory, and incident timeline**. The strongest findings are the ones that combine suspicious pathing, suspicious execution semantics, and suspicious timing.
 
-***
+---
 
-## Scope reminder
+## 📍 Scope reminder
 
 This guide is intentionally focused on **what to inspect** during a Windows Registry investigation. It is designed for triage and investigative review, with emphasis on persistence, evasion, activity reconstruction, credential exposure, and system manipulation.
